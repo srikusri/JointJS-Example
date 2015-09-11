@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="/styles/joint.css" />
+    <script src="/scripts/jquery.min.js"></script>
+    <script src="/scripts/lodash.min.js"></script>
+    <script src="/scripts/backbone-min.js"></script>
+    <script src="/scripts/graphlib.min.js"></script>
+    <script src="/scripts/dagre.min.js"></script>
+    <script src="/scripts/joint.js"></script>
+    <script src="/scripts/joint.layout.DirectedGraph.js"></script>
+</head>
+<body>
+  <div id="paper"></div>
+  <script type="text/javascript">
+     joint.shapes.basic.Server = joint.shapes.basic.Generic.extend({
+    markup: '<g class="rotatable"><g class="scalable"><rect/></g><text/></g>',
+
+    defaults: joint.util.deepSupplement({
+        type: 'basic.Rect',
+        attrs: {
+            'rect': { fill: 'white', stroke: 'black', 'follow-scale': true, height: 20, width: 100 },
+            'text': { 'font-size': 14, 'ref-x': .5, 'ref-y': .5, ref: 'rect', 'y-alignment': 'middle', 'x-alignment': 'middle' }
+        }
+    }, joint.shapes.basic.Generic.prototype.defaults)
+});
+      
+    var graph = new joint.dia.Graph;
+
+    var paper = new joint.dia.Paper({
+        el: $('#paper'),
+        width: 2000,
+        height: 2000,
+        gridSize: 1,
+        model: graph
+    });
+
+    function createServer(name) {
+		return new joint.shapes.basic.Server({
+			size: { width: 100, height: 30 },
+			attrs: { rect: { fill: '#ccc' }, text: { text: 'Server '+name, fill: 'black' } }
+		});
+	}
+	
+	function createLink(src, des){
+		return new joint.dia.Link({
+			source: { id: src.id },
+			target: { id: des.id }
+		}).attr({
+            '.connection': { stroke: 'grey' },
+            '.marker-target': { fill: 'grey', d: 'M 10 0 L 0 5 L 10 10 z' }
+        });
+	}
+      
+    function buildServerGraphFromDependency(adjacencyList) {
+
+        var temp = [];
+        var elements = [];
+        var links = [];
+
+        _.each(adjacencyList, function(edges, parentElementLabel) {
+            var src;
+            src = createServer(parentElementLabel);
+            temp[parentElementLabel] = src;            
+            elements.push(src);
+        });
+        _.each(adjacencyList, function(edges, parentElementLabel) {
+            var src = temp[parentElementLabel];
+            _.each(edges, function(childElementLabel) {
+                var des = temp[childElementLabel];
+                links.push(createLink(src, des));
+            });
+        });
+
+        // Links must be added after all the elements. This is because when the links
+        // are added to the graph, link source/target
+        // elements must be in the graph already.
+        return elements.concat(links);
+    }
+          
+    var topo = {
+        'A' : ['B', 'C', 'Z'],
+        'B' : ['D', 'E'],
+        'C' : ['F'],
+        'D' : [],
+        'E' : [],
+        'F' : ['Z'],
+        'Z' : []
+    }
+      
+    var cells = buildServerGraphFromDependency(topo);
+    graph.addCells(cells);
+    joint.layout.DirectedGraph.layout(graph, { setLinkVertices: false });
+
+  </script>
+</body>
+</html>
