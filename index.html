@@ -14,16 +14,15 @@
   <div id="paper"></div>
   <script type="text/javascript">
      joint.shapes.basic.Server = joint.shapes.basic.Generic.extend({
-    markup: '<g class="rotatable"><g class="scalable"><rect/></g><text/></g>',
+        markup: '<g class="rotatable"><g class="scalable"><path class="path1" d="M512 0c-282.77 0-512 71.634-512 160v128c0 88.366 229.23 160 512 160s512-71.634 512-160v-128c0-88.366-229.23-160-512-160z"></path><path class="path2" d="M512 544c-282.77 0-512-71.634-512-160v192c0 88.366 229.23 160 512 160s512-71.634 512-160v-192c0 88.366-229.23 160-512 160z"></path><path class="path3" d="M512 832c-282.77 0-512-71.634-512-160v192c0 88.366 229.23 160 512 160s512-71.634 512-160v-192c0 88.366-229.23 160-512 160z"></path></g></g>',
 
-    defaults: joint.util.deepSupplement({
-        type: 'basic.Rect',
-        attrs: {
-            'rect': { fill: 'white', stroke: 'black', 'follow-scale': true, height: 20, width: 100 },
-            'text': { 'font-size': 14, 'ref-x': .5, 'ref-y': .5, ref: 'rect', 'y-alignment': 'middle', 'x-alignment': 'middle' }
-        }
-    }, joint.shapes.basic.Generic.prototype.defaults)
-});
+        defaults: joint.util.deepSupplement({
+            type: 'basic.Rect',
+            attrs: {
+                'path': { fill: '#f86e00'}
+            }
+        }, joint.shapes.basic.Generic.prototype.defaults)
+    });
       
     var graph = new joint.dia.Graph;
 
@@ -32,13 +31,18 @@
         width: 2000,
         height: 2000,
         gridSize: 1,
-        model: graph
+        model: graph,
+        embeddingMode: true
     });
-
+    
     function createServer(name) {
-		return new joint.shapes.basic.Server({
+//		return new joint.shapes.basic.Server({
+//			size: { width: 50, height: 50 },
+//			attrs: { text: { text: name } }
+//		});
+        return new joint.shapes.basic.Rect({
 			size: { width: 100, height: 30 },
-			attrs: { rect: { fill: '#ccc' }, text: { text: 'Server '+name, fill: 'black' } }
+			attrs: { rect: { stroke: 'grey', fill: "#ddd"},text: { text: 'CI - '+name, fill: 'black' } }
 		});
 	}
 	
@@ -52,17 +56,30 @@
         });
 	}
       
+    var start = createServer("start");
+    var end = createServer("end");
+    var plus = new joint.shapes.basic.Rect({
+        size: { width: 20, height: 20 },
+        attrs: { text: { text: ' + ', fill: 'black' } }
+    });
+    var outerlinks = [];
     function buildServerGraphFromDependency(adjacencyList) {
-
         var temp = [];
         var elements = [];
         var links = [];
-
         _.each(adjacencyList, function(edges, parentElementLabel) {
             var src;
             src = createServer(parentElementLabel);
             temp[parentElementLabel] = src;            
             elements.push(src);
+            //do this for all parent nodes - currently hadcoding relation
+            if(parentElementLabel === 'A' || parentElementLabel === 'B'){
+                outerlinks.push(createLink(start, temp[parentElementLabel]));
+            }
+            //do this for all leaf nodes - currently hadcoding relation
+            if(parentElementLabel === 'Y' || parentElementLabel === 'Z'){
+                outerlinks.push(createLink(temp[parentElementLabel], end));
+            }
         });
         _.each(adjacencyList, function(edges, parentElementLabel) {
             var src = temp[parentElementLabel];
@@ -79,19 +96,49 @@
     }
           
     var topo = {
-        'A' : ['B', 'C', 'Z'],
+        'A' : ['C', 'D'],
         'B' : ['D', 'E'],
         'C' : ['F'],
-        'D' : [],
-        'E' : [],
+        'D' : ['F'],
+        'E' : ['Y'],
         'F' : ['Z'],
+        'Y' : [],
         'Z' : []
     }
       
     var cells = buildServerGraphFromDependency(topo);
+    cells.push(plus);
     graph.addCells(cells);
     joint.layout.DirectedGraph.layout(graph, { setLinkVertices: false });
-
+    //this is required to put all nodes under a container
+    var bbox = graph.getBBox(graph.getElements());
+    var outerRect = new joint.shapes.basic.Rect({
+        position: { x: bbox.x - 10, y: bbox.y - 10 },
+        size: { width: bbox.width + 20, height: bbox.height + 20 },
+        attrs: { rect: { stroke: '#ccc', fill:"transparent" }}
+    });
+    graph.addCell(outerRect);
+    _.each(cells, function(cell){
+        if(!cell.isLink()) {
+            outerRect.embed(cell);
+        }        
+    }); 
+    outerRect.embed(plus);
+    //required to give container padding
+    outerRect.translate(10, 10);
+    
+    //add start and end nodes after adding others in a container.
+    graph.addCells([start, end]);
+    graph.addCells(outerlinks);
+    joint.layout.DirectedGraph.layout(graph, { setLinkVertices: false });
+    
+    paper.on('cell:pointerclick', 
+        function(cellView, evt, x, y) { 
+            console.log("Clicked");
+            console.log(cellView.model);
+            //expand menu / collapse menu
+        }
+    );
   </script>
 </body>
 </html>
