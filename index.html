@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel="stylesheet" href="/styles/joint.css" />
-    <script src="/scripts/jquery.min.js"></script>
-    <script src="/scripts/lodash.min.js"></script>
-    <script src="/scripts/backbone-min.js"></script>
-    <script src="/scripts/graphlib.min.js"></script>
-    <script src="/scripts/dagre.min.js"></script>
-    <script src="/scripts/joint.js"></script>
-    <script src="/scripts/joint.layout.DirectedGraph.js"></script>
+    <link rel="stylesheet" href="styles/joint.css" />
+    <script src="scripts/jquery.min.js"></script>
+    <script src="scripts/lodash.min.js"></script>
+    <script src="scripts/backbone-min.js"></script>
+    <script src="scripts/graphlib.min.js"></script>
+    <script src="scripts/dagre.min.js"></script>
+    <script src="scripts/joint.js"></script>
+    <script src="scripts/joint.layout.DirectedGraph.js"></script>
 </head>
 <body>
   <div id="paper"></div>
@@ -57,22 +57,43 @@
         });
 	}
     
-    var plus = new joint.shapes.basic.Rect({
-        size: { width: 20, height: 20 },
-        attrs: { text: { text: ' + ', fill: 'black' } }
+    var minus = new joint.shapes.basic.Rect({
+        size: { width: 60, height: 20 },
+        attrs: { text: { text: ' Collapse ', fill: 'black' } }
+    });
+     var plus = new joint.shapes.basic.Rect({
+        size: { width: 60, height: 20 },
+        attrs: { text: { text: ' Expand ', fill: 'black' } }
     });
     var start = createServer("start");
     var end = createServer("end");
+    var outerRect;
+
     var outerlinks = [];
     
     paper.on('cell:pointerclick', 
         function(cellView, evt, x, y) { 
             console.log("Clicked");
             console.log(cellView.model);
-            if(cellView.model.id === plus.id) {
-                //do hide topo
+            if(cellView.model.id === minus.id) {
+                console.log('minus clicked');
+                
+                plus.position(outerRect.attributes.size.width/2 - 30, outerRect.attributes.size.height/2 - 10);
+                outerRect.remove()
+                graph.addCell(plus);
+                graph.addCell(createLink(start, plus));
+                graph.addCell(createLink(plus, end));
             }
-            //expand menu / collapse menu
+            if (cellView.model.id === plus.id){
+                graph.clear();
+                outerlinks = [];
+                renderExpandedTopology();
+                //graph.addCells(outerlinks);
+                graph.addCells([start, end]);
+    graph.addCells(outerlinks);
+
+    joint.layout.DirectedGraph.layout(graph, { setLinkVertices: false });
+            }
         }
     );
       
@@ -119,13 +140,24 @@
         'Z' : []
     }
       
-    var cells = buildServerGraphFromDependency(topo);
-    cells.push(plus);
+    
+    renderExpandedTopology();
+
+    graph.addCells([start, end]);
+    graph.addCells(outerlinks);
+
+    joint.layout.DirectedGraph.layout(graph, { setLinkVertices: false });
+    //add start and end nodes after adding others in a container.
+    
+
+    function renderExpandedTopology () {
+        var cells = buildServerGraphFromDependency(topo);
+    cells.push(minus);
     graph.addCells(cells);
     joint.layout.DirectedGraph.layout(graph, { setLinkVertices: false });
     //this is required to put all nodes under a container
     var bbox = graph.getBBox(graph.getElements());
-    var outerRect = new joint.shapes.basic.Rect({
+    outerRect = new joint.shapes.basic.Rect({
         position: { x: bbox.x - 10, y: bbox.y - 10 },
         size: { width: bbox.width + 20, height: bbox.height + 20 },
         attrs: { rect: { stroke: '#ccc', fill:"transparent" }}
@@ -136,14 +168,11 @@
             outerRect.embed(cell);
         }        
     }); 
-    outerRect.embed(plus);
+    outerRect.embed(minus);
+    minus.toFront();
     //required to give container padding
     outerRect.translate(10, 10);
-    
-    //add start and end nodes after adding others in a container.
-    graph.addCells([start, end]);
-    graph.addCells(outerlinks);
-    joint.layout.DirectedGraph.layout(graph, { setLinkVertices: false });
+    }
         
   </script>
   
