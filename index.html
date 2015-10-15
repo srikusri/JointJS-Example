@@ -55,23 +55,25 @@
 
     var paper = new joint.dia.Paper({
         el: $('#paper'),
-        width: 2000,
-        height: 2000,
+        width: 1000,
+        height: 700,
         gridSize: 1,
         model: graph,
         //interactive: false,//set edit false for now
         embeddingMode: true
     });
-    
+    var dstart, dend;
     paper.on('cell:pointerclick', 
         function(cellView, evt, x, y) { 
             if(cellView.model.id === minus.id) {
                 startGraph();
             }
             if(cellView.model.id === plus.id){
+                $('#res').text("Building graph...");
                 buildGraph();
             }
             if(cellView.model.attributes.type === 'basic.Server'){
+                cellView.highlight();
                 $('#details').show().html(cellView.model.attributes.value+ "<br/>Top: "+y+"<br/>Left: "+x);
             }
         }
@@ -120,6 +122,9 @@
             if(['E', 'F', 'G', 'J', 'L', 'M', 'O', 'P'].indexOf(parentElementLabel) >= 0){
                 outerlinks.push(createLink(temp[parentElementLabel], end));
             }
+//            if(['l', 'm', 'o', 'p', 'n'].indexOf(parentElementLabel) >= 0){
+//                outerlinks.push(createLink(temp[parentElementLabel], end));
+//            }
         });
         _.each(adjacencyList, function(edges, parentElementLabel) {
             var src = temp[parentElementLabel];
@@ -151,25 +156,96 @@
         'O' : [],
         'P' : []
     }
-      
-    
-    function buildGraph(){
-        graph.clear();
-        outerlinks = [];
-        renderExpandedTopology();
-        //add start and end nodes after adding others in a container.
-        graph.addCells([start, end]);
-        graph.addCells(outerlinks);
 
-        joint.layout.DirectedGraph.layout(graph, { setLinkVertices: false });
-    }
-      
+//    var topo = {
+//        'A' : ['B'],
+//        'B' : ['C'],
+//        'C' : ['E', 'F'],
+//        'E' : ['G'],
+//        'F' : ['c'],
+//        'G' : [],
+//        'I' : ['J'],
+//        'J' : [],
+//        'K' : ['L', 'M'],
+//        'N' : ['O', 'P'],
+//        'L' : ['a'],
+//        'M' : ['b'],
+//        'O' : ['d'],
+//        'P' : ['f'],
+//        'a': ['e'],
+//        'b': ['g'],
+//        'c': ['h'],
+//        'd': ['i'],
+//        'e': ['j'],
+//        'f': ['k'],
+//        'g': ['l'],
+//        'h': ['m'],
+//        'i': ['n'],
+//        'j': ['o'],
+//        'k': ['p'],
+//        'l': [],
+//        'n': [],
+//        'm': [],
+//        'o': [],
+//        'p': []
+//    };
+//    for(var i = 1; i < 10; i+=2) {
+//        topo[i+""] = [i+1+""];
+//        topo[i+1+""] = [i+2+""]
+//    }
+//      topo["10"] = [];topo["11"] = [];topo["12"] = [];
+//
     function startGraph(){
-        graph.clear();                
+        graph.clear();
         graph.addCells([start, end, plus]);
         graph.addCell(createLink(start, plus));
         graph.addCell(createLink(plus, end));
+        var bbox = graph.getBBox(graph.getElements());
+        var posx = 500 - bbox.width/2;
+        var opts = {
+            position: { x: bbox.x, y: bbox.y},
+            size: { width: bbox.width + 50, height: bbox.height + 80 },
+            attrs: { rect: { stroke: '#006699', fill:"transparent" }}
+        };
+        container = new joint.shapes.basic.Rect(opts);
+        graph.addCell(container);
+        container.embed(start);
+        container.embed(plus);
+        container.embed(end);
+        container.toBack({deep: true});
         joint.layout.DirectedGraph.layout(graph, { setLinkVertices: false });
+        container.translate(posx);
+    }
+    
+    function buildGraph(){
+        dstart = new Date();
+        graph.clear();
+        outerlinks = [];
+        renderExpandedTopology();
+    }
+      
+    function renderContainer(){
+        graph.addCells([start, end]);
+        graph.addCells(outerlinks);
+        joint.layout.DirectedGraph.layout(graph, { setLinkVertices: false });
+//        var bbox = graph.getBBox(graph.getElements());
+//        var posx = 500 - bbox.width/2;
+//        console.log(posx);
+//        var opts = {
+//            position: { x: bbox.x, y: bbox.y},
+//            size: { width: bbox.width, height: bbox.height},
+//            attrs: { rect: { stroke: none, fill:"transparent" }}
+//        };
+//        container = new joint.shapes.basic.Rect(opts);
+//        graph.addCell(container);
+//        container.embed(start);
+//        container.embed(outerRect);
+//        container.embed(end);
+//        container.translate(posx);
+//        container.toBack();
+        dend = new Date();
+        $('#res').text(dend - dstart);
+        //paper.scaleContentToFit();
     }
         
     function renderExpandedTopology () {
@@ -181,7 +257,7 @@
         var bbox = graph.getBBox(graph.getElements());
         var opts = {
             position: { x: bbox.x, y: bbox.y},
-            size: { width: bbox.width + 50, height: bbox.height + 80 },
+            size: { width: bbox.width + 50, height: bbox.height + 100 },
             attrs: { rect: { stroke: '#ccc', fill:"transparent" }}
         };
         outerRect = new joint.shapes.basic.Rect(opts);
@@ -192,12 +268,20 @@
                 outerRect.embed(cell);
             }        
         });
+        outerRect.fitEmbeds({deep: true});
         outerRect.toBack({deep: true});
+        renderContainer();
     }
     
     startGraph();
         
   </script>
-  <div id="details" style="display: none;width:100px; height: 100px;border: 1px solid #ccc;position: absolute; top:0;"></div>
+  <p>
+      Draw time: <span id="res">0</span> ms<br/>
+      Sample test: 16 - 1s | 32 - 2.8s | 46 - 3.5s <br/>
+      Total Nodes: 14 <br/>
+      Click details:
+      <div id="details"></div>
+  </p>
 </body>
 </html>
