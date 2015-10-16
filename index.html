@@ -11,7 +11,14 @@
     <script src="scripts/joint.layout.DirectedGraph.js"></script>
 </head>
 <body>
-  <div id="paper"></div>
+  <div>
+      Draw time: <span id="res">0</span> ms<br/>
+      Sample test: 16 - 1s | 32 - 2.8s | 46 - 3.5s <br/>
+      Total Nodes: 14 <br/>
+      Click details:
+      <span id="details"></span>
+  </div>
+  <div id="paper" style="display:inline-block;"></div>
   <script type="text/javascript">
      var computer  = '<g class="rotatable"><g class="scalable"><g><path class="st0" d="M64.6,0.1H5.4C2.4,0.1,0,2.5,0,5.5v59.1c0,3,2.4,5.4,5.4,5.4h59.1c3,0,5.4-2.4,5.4-5.4V5.5C70,2.5,67.6,0.1,64.6,0.1zM3.5,64.6V5.5c0-1,0.9-1.9,1.9-1.9h43.3v62.9H5.4C4.4,66.5,3.5,65.7,3.5,64.6z M66.5,64.6c0,1.1-0.9,1.9-1.9,1.9H52.2V3.6h12.3c1.1,0,1.9,0.9,1.9,1.9V64.6z"/><path class="st0" d="M34.3,58.4c-1,0-1.8,0.8-1.8,1.8c0,1,1.8,1.8,2.7,1.8c1,0,0.8-0.8,0.8-1.8C36.1,59.2,35.3,58.4,34.3,58.4z"/><circle class="st0" cx="34.3" cy="54.4" r="1.8"/><circle class="st0" cx="34.3" cy="48.6" r="1.8"/><path class="st0" d="M41.5,40h-15c-1,0-1.8,0.8-1.8,1.8c0,1,0.8,1.8,1.8,1.8h15c1,0,1.8-0.8,1.8-1.8C43.2,40.8,42.5,40,41.5,40z"/><path class="st0" d="M30.6,37.1h6.8c3,0,5.4-2.4,5.4-5.4V15.2c0-3-2.4-5.4-5.4-5.4h-6.8c-3,0-5.4,2.4-5.4,5.4v16.5C25.2,34.7,27.6,37.1,30.6,37.1z M28.7,15.2c0-1,0.9-1.9,1.9-1.9h6.8c1.1,0,1.9,0.9,1.9,1.9v16.5c0,1.1-0.9,1.9-1.9,1.9h-6.8c-1.1,0-1.9-0.9-1.9-1.9V15.2z"/></g></g><text /></g>';
       joint.shapes.basic.Computer = joint.shapes.basic.Generic.extend({
@@ -276,12 +283,5 @@
     startGraph();
         
   </script>
-  <p>
-      Draw time: <span id="res">0</span> ms<br/>
-      Sample test: 16 - 1s | 32 - 2.8s | 46 - 3.5s <br/>
-      Total Nodes: 14 <br/>
-      Click details:
-      <div id="details"></div>
-  </p>
 </body>
 </html>
